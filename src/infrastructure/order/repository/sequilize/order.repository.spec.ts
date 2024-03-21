@@ -117,7 +117,29 @@ describe("Order repository test", () => {
       include: ["items"],
     });
 
-    expect(orderModel.total).toEqual(order.total());
+    expect(orderModel.toJSON()).toStrictEqual({
+      id: order.id,
+      customer_id: order.customerId,
+      total: order.total(),
+      items: [
+        {
+          id: orderItem.id,
+          name: orderItem.name,
+          price: orderItem.price,
+          quantity: orderItem.quantity,
+          order_id: order.id,
+          product_id: product.id,
+        },
+        {
+          id: orderItem2.id,
+          name: orderItem2.name,
+          price: orderItem2.price,
+          quantity: orderItem2.quantity,
+          order_id: order.id,
+          product_id: product2.id,
+        }
+      ],
+    });
   });
 
   it("should find a order", async () => {
