@@ -1,6 +1,9 @@
+import Customer from "../../customer/entity/customer";
 import CustomerCreatedEvent from "../../customer/event/customer-created.event";
+import EnviaConsoleLogHandler from "../../customer/event/handler/envia-console-log.handler";
 import EnviaConsoleLog1Handler from "../../customer/event/handler/envia-console-log1.handler";
 import EnviaConsoleLog2Handler from "../../customer/event/handler/envia-console-log2.handler";
+import Address from "../../customer/value-object/address";
 import SendEmailWhenProductIsCreatedHandler from "../../product/event/handler/send-email-when-product-is-created.handler";
 import ProductCreatedEvent from "../../product/event/product-created.event";
 import EventDispatcher from "./event-dispatcher";
@@ -85,8 +88,14 @@ describe("Domain events tests", () => {
 
   it("should notify all customer event handlers", () => {
     const eventDispatcher = new EventDispatcher();
+
+    const eventConsoleLogHandler = new EnviaConsoleLogHandler();
+    const spyEventHandler = jest.spyOn(eventConsoleLogHandler, "handle");
+
+    eventDispatcher.register("CustomerCreatedEvent", eventConsoleLogHandler);
+
     const eventConsoleLog1Handler = new EnviaConsoleLog1Handler();
-    const spyEventHandler = jest.spyOn(eventConsoleLog1Handler, "handle");
+    const spy1EventHandler = jest.spyOn(eventConsoleLog1Handler, "handle");
 
     eventDispatcher.register("CustomerCreatedEvent", eventConsoleLog1Handler);
 
@@ -97,17 +106,25 @@ describe("Domain events tests", () => {
 
     expect(
       eventDispatcher.getEventHandlers["CustomerCreatedEvent"][0]
-    ).toMatchObject(eventConsoleLog1Handler);
+    ).toMatchObject(eventConsoleLogHandler);
     expect(
       eventDispatcher.getEventHandlers["CustomerCreatedEvent"][1]
+    ).toMatchObject(eventConsoleLog1Handler);
+    expect(
+      eventDispatcher.getEventHandlers["CustomerCreatedEvent"][2]
     ).toMatchObject(eventConsoleLog2Handler);
 
-    const customerCreatedEvent = new CustomerCreatedEvent({ name: "Customer 1" })
+    const customer = new Customer("1", "Customer 1");
+    const address = new Address("Street 1", 123, "13330-250", "São Paulo");
+    customer.Address = address;
+
+    const customerCreatedEvent = new CustomerCreatedEvent({ customer })
 
     // Quando o notify for executado o SendEmailWhenProductIsCreatedHandler.handle() deve ser chamado
     eventDispatcher.notify(customerCreatedEvent);
 
     expect(spyEventHandler).toHaveBeenCalled();
+    expect(spy1EventHandler).toHaveBeenCalled();
     expect(spy2EventHandler).toHaveBeenCalled();
   });
 });
